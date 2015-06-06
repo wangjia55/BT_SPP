@@ -89,4 +89,7 @@ public class BtManager implements IBtService {
     }
 
 
+    public int getBluetoothState() {
+        return mBluetoothAdapter.getState();
+    }
 }

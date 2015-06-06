@@ -1,5 +1,7 @@
 package com.jacob.bt.spp;
 
+import android.bluetooth.BluetoothAdapter;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.view.View;
@@ -10,6 +12,7 @@ import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.jacob.bt.spp.core.BtManager;
 import com.jacob.bt.spp.core.ConnectState;
@@ -20,6 +23,7 @@ import com.jacob.bt.spp.utils.LogUtils;
 
 public class MainActivity extends FragmentActivity implements View.OnClickListener {
     public static final String TAG = "MainActivity";
+    private static final int REQUEST_START_BLE = 10;
     private TextView mTextViewData;
     private TextView mTextViewDataFliter;
     private Spinner mSpinnerCommand;
@@ -33,6 +37,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
 
     private String mSendData;
     private String mCommand;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +76,11 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
 
             }
         });
+
+        if (BtManager.getInstance().getBluetoothState() == BluetoothAdapter.STATE_OFF) {
+            Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(intent, REQUEST_START_BLE);
+        }
     }
 
 
@@ -118,7 +128,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                     mScrollViewData.fullScroll(ScrollView.FOCUS_DOWN);
 
                     mTextViewDataFliter.setText(mTextViewDataFliter.getText().toString()
-                            + CommandUtils.parseReadData(mCommand,data));
+                            + CommandUtils.parseReadData(mCommand, data));
                 }
             });
 
@@ -147,6 +157,22 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             mButtonSendData.setEnabled(false);
         }
     };
+
+    /**
+     * 开启ble的回执
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_START_BLE) {
+            if (resultCode == RESULT_OK) {
+                Toast.makeText(this, "同意开启 BLE", Toast.LENGTH_LONG).show();
+            } else if (resultCode == RESULT_CANCELED) {
+                Toast.makeText(this, "拒绝开启 BLE", Toast.LENGTH_LONG).show();
+            }
+        }
+
+    }
 
 
     @Override
