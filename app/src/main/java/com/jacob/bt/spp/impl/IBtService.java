@@ -1,6 +1,6 @@
 package com.jacob.bt.spp.impl;
 
-import java.util.UUID;
+import android.bluetooth.BluetoothDevice;
 
 /**
  * Package : com.jacob.bt.spp.core
@@ -9,7 +9,11 @@ import java.util.UUID;
  * Description : 这个类是用来xxx
  */
 public interface IBtService {
-    void connect(UUID uuid);
+    void connect(String address, BtConnectCallBack btConnectCallBack) throws IllegalArgumentException;
+
+    void connect(BluetoothDevice device, BtConnectCallBack btConnectCallBack);
+
+    void disconnect();
 
     void writeData(byte[] data);
 
