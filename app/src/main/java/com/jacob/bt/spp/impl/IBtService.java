@@ -15,7 +15,5 @@ public interface IBtService {
 
     void disconnect();
 
-    void writeData(byte[] data);
-
-    void readData(BtReadDataCallBack btReadDataCallBack);
+    void writeData(byte[] data,BtTransferDataCallBack btTransferDataCallBack);
 }

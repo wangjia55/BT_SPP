@@ -8,9 +8,12 @@ import android.os.Handler;
 import android.os.Message;
 
 import com.jacob.bt.spp.impl.BtConnectCallBack;
+import com.jacob.bt.spp.impl.BtTransferDataCallBack;
 import com.jacob.bt.spp.utils.LogUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.UUID;
 
 /**
@@ -26,14 +29,21 @@ public class BtSppConnector {
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothDevice mBluetoothDevice;
     private BluetoothSocket mBluetoothSocket;
+    private InputStream mInputStream;
+    private OutputStream mOutputStream;
+
     private ConnectDeviceThread mConnectThread;
+    private TransferDataThread mTransDataThread;
     private BtConnectCallBack mBtConnectCallBack;
+    private BtTransferDataCallBack mBtTransDataCallBack;
     private ConnectState mConnectState = ConnectState.STATE_DISCONNECTED;
 
     public static final int MSG_CONNECT_SUCCESS = 0x100;
     public static final int MSG_CONNECT_FAIL = 0x101;
+    public static final int MSG_READ_DATA = 0x102;
 
     private static final String PARAMS_STRING = "params_string";
+    private static final String PARAMS_BYTE = "params_byte";
 
     public BtSppConnector() {
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -56,6 +66,12 @@ public class BtSppConnector {
                         mBtConnectCallBack.deviceDisconnected(reason);
                     }
                     break;
+                case MSG_READ_DATA:
+                    if (mBtTransDataCallBack != null) {
+                        byte[] buffer = msg.getData().getByteArray(PARAMS_BYTE);
+                        mBtTransDataCallBack.readData(buffer);
+                    }
+                    break;
 
             }
 
@@ -76,7 +92,6 @@ public class BtSppConnector {
         mBluetoothAdapter.cancelDiscovery();
         mConnectThread = new ConnectDeviceThread(bluetoothDevice);
         mConnectThread.start();
-
     }
 
 
@@ -85,12 +100,34 @@ public class BtSppConnector {
      */
     public void disconnect() {
         mConnectState = ConnectState.STATE_DISCONNECTED;
-        if (mConnectThread != null) {
-            mConnectThread.cancel();
-        }
+        cancel();
         if (mBtConnectCallBack != null) {
             mBtConnectCallBack.deviceDisconnected("");
         }
+        mTransDataThread = null;
+        mConnectThread = null;
+    }
+
+    /**
+     * 向蓝牙设备写命令
+     */
+    public void writeData(byte[] data, BtTransferDataCallBack btTransferDataCallBack) {
+        mBtTransDataCallBack = btTransferDataCallBack;
+        if (mTransDataThread == null) {
+            mTransDataThread = new TransferDataThread();
+            mTransDataThread.start();
+        }
+        mTransDataThread.write(data);
+    }
+
+    /**
+     * 获取当前设备连接的状态
+     */
+    public ConnectState getCurrentState() {
+        if (mBluetoothSocket != null) {
+            return mBluetoothSocket.isConnected() ? ConnectState.STATE_CONNECTED : ConnectState.STATE_DISCONNECTED;
+        }
+        return mConnectState;
     }
 
 
@@ -104,9 +141,7 @@ public class BtSppConnector {
                 if (mBluetoothSocket != null) {
                     mBluetoothSocket.close();
                 }
-
                 mBluetoothSocket = device.createRfcommSocketToServiceRecord(UUID.fromString(ANDROID_BT_UUID));
-
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -126,14 +161,90 @@ public class BtSppConnector {
 
         }
 
+    }
 
-        public void cancel() {
-            try {
-                mBluetoothSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+
+    /**
+     * 数据传递子线程，当蓝牙连接成功后，通过这个子线程进行命令的发送和数据的交换
+     */
+    private class TransferDataThread extends Thread {
+        public TransferDataThread() {
+            if (mBluetoothSocket != null && mBluetoothSocket.isConnected()) {
+                try {
+                    mInputStream = mBluetoothSocket.getInputStream();
+                    mOutputStream = mBluetoothSocket.getOutputStream();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
+
+        @Override
+        public void run() {
+            if (mInputStream == null) {
+                callbackTransDataError("inputStream is null ,can not read data");
+                return;
+            }
+            byte[] buffer = new byte[1024];
+            int bytes;
+            while (true) {
+                try {
+                    bytes = mInputStream.read(buffer);
+                    if (bytes > 0) {
+                        final byte[] temp_buffer = new byte[bytes];
+                        System.arraycopy(buffer, 0, temp_buffer, 0, bytes);
+                        sendReadDataMessage(temp_buffer);
+                    }
+
+                } catch (IOException e) {
+                    callbackTransDataError(e.getMessage());
+                }
+            }
+        }
+
+        public void write(byte[] bytes) {
+            if (mOutputStream != null) {
+                try {
+                    mOutputStream.write(bytes);
+                    mOutputStream.flush();
+                } catch (IOException e) {
+                    callbackTransDataError("write data error:" + e.getMessage());
+                }
+            }
+        }
+    }
+
+
+    private void cancel() {
+        try {
+            if (mBluetoothSocket != null) {
+                mBluetoothSocket.close();
+                mBluetoothSocket = null;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 数据传递异常信息的回调
+     */
+    private void callbackTransDataError(String reason) {
+        if (mBtTransDataCallBack != null) {
+            mBtTransDataCallBack.transDataError(reason);
+        }
+    }
+
+    /**
+     * 发送从蓝牙设备读取到的数据
+     */
+    private void sendReadDataMessage(byte[] buffer) {
+        Message msg = Message.obtain();
+        msg.what = MSG_READ_DATA;
+        Bundle bundle = new Bundle();
+        bundle.putByteArray(PARAMS_BYTE, buffer);
+        msg.setData(bundle);
+        mHandler.sendMessage(msg);
     }
 
 

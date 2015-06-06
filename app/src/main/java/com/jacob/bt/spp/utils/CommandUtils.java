@@ -34,6 +34,8 @@ public class CommandUtils {
     public static final String COMMAND_FILE_READ_DATA = "fr:";
     public static final String COMMAND_FILE_WRITE_DATA = "fw:";
 
+    public static final String COMMAND_PREFIX = "at+[1588]cft:";
+
 
     public static final String[] sCommandString = {
             COMMAND_GET_IMEI,

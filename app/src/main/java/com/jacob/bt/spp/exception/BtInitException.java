@@ -6,11 +6,11 @@ package com.jacob.bt.spp.exception;
  * Date : 15-6-6
  * Description : 这个类是用来xxx
  */
-public class BluetoothInitException extends Exception {
-    public BluetoothInitException() {
+public class BtInitException extends Exception {
+    public BtInitException() {
     }
 
-    public BluetoothInitException(String detailMessage) {
+    public BtInitException(String detailMessage) {
         super(detailMessage);
     }
 

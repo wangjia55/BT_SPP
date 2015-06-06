@@ -7,11 +7,14 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.jacob.bt.spp.core.BtManager;
+import com.jacob.bt.spp.core.ConnectState;
 import com.jacob.bt.spp.impl.BtConnectCallBack;
+import com.jacob.bt.spp.impl.BtTransferDataCallBack;
 import com.jacob.bt.spp.utils.CommandUtils;
 import com.jacob.bt.spp.utils.LogUtils;
 
@@ -22,9 +25,13 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     private Spinner mSpinnerCommand;
     private Button mButtonConnect;
     private Button mButtonSendData;
-
     private EditText mEditTextBTMac;
     private EditText mEditTextOutputData;
+    private ScrollView mScrollViewData = null;
+    private ScrollView mScrollViewDataFliter = null;
+
+    private String mSendData;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +40,8 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
 
         mButtonConnect = (Button) findViewById(R.id.button_connect_spp);
         mButtonConnect.setOnClickListener(this);
+        mScrollViewData = (ScrollView) findViewById(R.id.scrollView_data);
+        mScrollViewDataFliter = (ScrollView) findViewById(R.id.scrollView_data_fliter);
 
         mTextViewData = (TextView) findViewById(R.id.textView_data);
         mTextViewDataFliter = (TextView) findViewById(R.id.textView_data_fliter);
@@ -67,32 +76,77 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.button_connect_spp:
-                String mac = mEditTextBTMac.getText().toString();
-                BtManager.getInstance().connect(mac, connectCallBack);
-
+                if (BtManager.getInstance().getCurrentState() == ConnectState.STATE_DISCONNECTED) {
+                    String mac = mEditTextBTMac.getText().toString();
+                    BtManager.getInstance().connect(mac, connectCallBack);
+                } else {
+                    BtManager.getInstance().disconnect();
+                }
                 break;
             case R.id.button_send_data:
+                String text = mTextViewData.getText().toString();
+                String command = CommandUtils.COMMAND_PREFIX + mEditTextOutputData.getText().toString();
 
+                if (mSendData != null) {
+                    command = CommandUtils.COMMAND_PREFIX + mSendData;
+                    mSendData = null;
+                }
+                BtManager.getInstance().writeData(command.getBytes(), transferDataCallBack);
 
+                mTextViewData.setText(text + "SEND -- " + command + "\r\n");
                 break;
         }
     }
+
+    private BtTransferDataCallBack transferDataCallBack = new BtTransferDataCallBack() {
+        @Override
+        public void sendData(byte[] data) {
+            LogUtils.LOGE(TAG, "sendData:" + new String(data));
+        }
+
+        @Override
+        public void readData(final byte[] data) {
+            LogUtils.LOGE(TAG, "readData:" + new String(data));
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    String text = mTextViewData.getText().toString();
+                    String data_str = new String(data);
+                    mTextViewData.setText(text + "RECV -- " + data_str + "\r\n");
+                    mScrollViewData.fullScroll(ScrollView.FOCUS_DOWN);
+                }
+            });
+
+        }
+
+        @Override
+        public void transDataError(String reason) {
+            LogUtils.LOGE(TAG, "transDataError:" + reason);
+        }
+    };
+
+    private BtConnectCallBack connectCallBack = new BtConnectCallBack() {
+        @Override
+        public void deviceConnected() {
+            LogUtils.LOGE(TAG, "deviceConnected");
+
+            mButtonSendData.setEnabled(true);
+            mButtonConnect.setText("DisConenct");
+            mTextViewData.setText(mTextViewData.getText().toString() + "New connection!!!\r\n");
+        }
+
+        @Override
+        public void deviceDisconnected(String reason) {
+            LogUtils.LOGE(TAG, "device Disconnected-->" + reason);
+
+            mButtonSendData.setEnabled(false);
+        }
+    };
+
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         BtManager.getInstance().disconnect();
     }
-
-    private BtConnectCallBack connectCallBack = new BtConnectCallBack() {
-        @Override
-        public void deviceConnected() {
-            LogUtils.LOGE(TAG, "deviceConnected");
-        }
-
-        @Override
-        public void deviceDisconnected(String reason) {
-            LogUtils.LOGE(TAG, "deviceDisconnected-->" + reason);
-        }
-    };
 }

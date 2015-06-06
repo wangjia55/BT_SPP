@@ -6,9 +6,10 @@ package com.jacob.bt.spp.impl;
  * Date : 15-6-5
  * Description : 这个类是用来xxx
  */
-public interface BtReadDataCallBack {
+public interface BtTransferDataCallBack {
+    void sendData(byte[] data);
 
     void readData(byte[] data);
 
-    void readError(String reason);
+    void transDataError(String reason);
 }
