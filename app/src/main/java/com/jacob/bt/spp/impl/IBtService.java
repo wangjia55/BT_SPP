@@ -16,4 +16,6 @@ public interface IBtService {
     void disconnect();
 
     void writeData(byte[] data,BtTransferDataCallBack btTransferDataCallBack);
+
+    void closeBluetooth();
 }

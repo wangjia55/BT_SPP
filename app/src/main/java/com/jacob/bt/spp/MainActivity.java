@@ -179,5 +179,6 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     protected void onDestroy() {
         super.onDestroy();
         BtManager.getInstance().disconnect();
+        BtManager.getInstance().closeBluetooth();
     }
 }

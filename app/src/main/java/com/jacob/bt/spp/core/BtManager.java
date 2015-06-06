@@ -60,8 +60,8 @@ public class BtManager implements IBtService {
     /**
      * 获取当前设备连接的状态
      */
-    public ConnectState getCurrentState(){
-        return  mBtSppConnector.getCurrentState();
+    public ConnectState getCurrentState() {
+        return mBtSppConnector.getCurrentState();
     }
 
     /**
@@ -86,6 +86,16 @@ public class BtManager implements IBtService {
     @Override
     public void writeData(byte[] data, BtTransferDataCallBack btTransferDataCallBack) {
         mBtSppConnector.writeData(data, btTransferDataCallBack);
+    }
+
+    /**
+     * 关闭蓝牙
+     */
+    @Override
+    public void closeBluetooth() {
+        if (mBluetoothAdapter != null && mBluetoothAdapter.isEnabled()) {
+            mBluetoothAdapter.disable();
+        }
     }
 
 
