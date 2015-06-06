@@ -20,7 +20,7 @@ import java.util.UUID;
  * Package : com.jacob.bt.spp.core
  * Author : jacob
  * Date : 15-6-5
- * Description : 这个类是用来xxx
+ * Description : 这个类是关于蓝牙SPP操作的核心类
  */
 public class BtSppConnector {
     public static final String TAG = "BtSppConnector";

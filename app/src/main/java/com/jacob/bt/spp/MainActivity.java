@@ -30,8 +30,9 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     private ScrollView mScrollViewData = null;
     private ScrollView mScrollViewDataFliter = null;
 
-    private String mSendData;
 
+    private String mSendData;
+    private String mCommand;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,7 +62,8 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         mSpinnerCommand.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                mEditTextOutputData.setText(CommandUtils.parseSendCommand(CommandUtils.sCommandString[position]));
+                mCommand = CommandUtils.sCommandString[position];
+                mEditTextOutputData.setText(CommandUtils.parseSendCommand(mCommand));
             }
 
             @Override
@@ -114,6 +116,9 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                     String data_str = new String(data);
                     mTextViewData.setText(text + "RECV -- " + data_str + "\r\n");
                     mScrollViewData.fullScroll(ScrollView.FOCUS_DOWN);
+
+                    mTextViewDataFliter.setText(mTextViewDataFliter.getText().toString()
+                            + CommandUtils.parseReadData(mCommand,data));
                 }
             });
 
@@ -131,14 +136,14 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
             LogUtils.LOGE(TAG, "deviceConnected");
 
             mButtonSendData.setEnabled(true);
-            mButtonConnect.setText("DisConenct");
+            mButtonConnect.setText("DisConnect");
             mTextViewData.setText(mTextViewData.getText().toString() + "New connection!!!\r\n");
         }
 
         @Override
         public void deviceDisconnected(String reason) {
             LogUtils.LOGE(TAG, "device Disconnected-->" + reason);
-
+            mButtonConnect.setText("Connect");
             mButtonSendData.setEnabled(false);
         }
     };
