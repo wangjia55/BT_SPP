@@ -26,8 +26,6 @@ public class CommandUtils {
     public static final String COMMAND_POWER_OFF = "Power Off";
     public static final String COMMAND_POWER_OFF_DATA = "pof:";
 
-    public static final String COMMAND_PULL_FILE = "Pull File";
-    public static final String COMMAND_PUSH_FILE = "Push File";
     public static final String COMMAND_OPEN_FILE_DATA = "fo:";
     public static final String COMMAND_SET_FILE_PATH_DATA = "fsp:";
     public static final String COMMAND_CLOSE_FILE_DATA = "fc:";
@@ -35,6 +33,9 @@ public class CommandUtils {
     public static final String COMMAND_FILE_WRITE_DATA = "fw:";
 
     public static final String COMMAND_PREFIX = "at+[1588]cft:";
+
+    public static final int FILE_MODE_READ = 1;
+    public static final int FILE_MODE_CREATE = 4;
 
 
     public static final String[] sCommandString = {
@@ -45,9 +46,7 @@ public class CommandUtils {
             COMMAND_GET_WIFI_MAC,
             COMMAND_GET_BT_MAC,
             COMMAND_REBOOT,
-            COMMAND_POWER_OFF,
-            COMMAND_PULL_FILE,
-            COMMAND_PUSH_FILE,
+            COMMAND_POWER_OFF
     };
 
     public static String parseSendCommand(String command) {
@@ -75,12 +74,6 @@ public class CommandUtils {
 
             case CommandUtils.COMMAND_POWER_OFF:
                 return CommandUtils.COMMAND_POWER_OFF_DATA;
-
-            case CommandUtils.COMMAND_PULL_FILE:
-                return "";
-
-            case CommandUtils.COMMAND_PUSH_FILE:
-                return "";
             default:
                 return "";
         }
@@ -102,7 +95,7 @@ public class CommandUtils {
             case CommandUtils.COMMAND_GET_IMSI:
                 byte[] imsi = new byte[data.length - 2];
                 System.arraycopy(data, 2, imsi, 0, data.length - 2);
-                return  "IMSI: " + new String(imsi) + "\r\n";
+                return "IMSI: " + new String(imsi) + "\r\n";
 
             case CommandUtils.COMMAND_GET_BATTERY:
                 System.arraycopy(data, 2, data_int, 0, 8);
@@ -158,7 +151,7 @@ public class CommandUtils {
                         text = tmp + "SIM卡工作正常";
                         break;
                 }
-                return  text + "\r\n";
+                return text + "\r\n";
 
             case CommandUtils.COMMAND_GET_WIFI_MAC:
                 byte[] wifi_mac = new byte[data.length - 2];
@@ -167,14 +160,8 @@ public class CommandUtils {
 
             case CommandUtils.COMMAND_GET_BT_MAC:
                 byte[] btMac = new byte[data.length - 2];
-                System.arraycopy(data, 2, btMac, 0,12);
+                System.arraycopy(data, 2, btMac, 0, 12);
                 return "BT Mac: " + new String(btMac) + "\r\n";
-
-            case CommandUtils.COMMAND_PULL_FILE:
-                return "";
-
-            case CommandUtils.COMMAND_PUSH_FILE:
-                return "";
             default:
                 return "";
         }
@@ -182,7 +169,7 @@ public class CommandUtils {
     }
 
 
-    private static int getInt32(byte[] data) {
+    public static int getInt32(byte[] data) {
         int value = 0;
         for (int i = 0; i < 8; i++) {
             value <<= 4;
@@ -199,7 +186,7 @@ public class CommandUtils {
         return value;
     }
 
-    private static int getInt8(byte[] data) {
+    public static int getInt8(byte[] data) {
         int value = 0;
         for (int i = 0; i < 2; i++) {
             value <<= 4;

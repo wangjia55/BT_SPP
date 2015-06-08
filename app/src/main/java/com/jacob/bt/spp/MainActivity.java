@@ -25,10 +25,11 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     public static final String TAG = "MainActivity";
     private static final int REQUEST_START_BLE = 10;
     private TextView mTextViewData;
-    private TextView mTextViewDataFliter;
+    private TextView mTextViewDataFilter;
     private Spinner mSpinnerCommand;
     private Button mButtonConnect;
     private Button mButtonSendData;
+    private Button mButtonPullFile;
     private EditText mEditTextBTMac;
     private EditText mEditTextOutputData;
     private ScrollView mScrollViewData = null;
@@ -50,10 +51,14 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         mScrollViewDataFliter = (ScrollView) findViewById(R.id.scrollView_data_fliter);
 
         mTextViewData = (TextView) findViewById(R.id.textView_data);
-        mTextViewDataFliter = (TextView) findViewById(R.id.textView_data_fliter);
+        mTextViewDataFilter = (TextView) findViewById(R.id.textView_data_fliter);
         mSpinnerCommand = (Spinner) findViewById(R.id.spinner_command);
         mButtonSendData = (Button) findViewById(R.id.button_send_data);
         mButtonSendData.setOnClickListener(this);
+
+        mButtonPullFile = (Button) findViewById(R.id.button_pull_file);
+        mButtonPullFile.setOnClickListener(this);
+
 
         mEditTextBTMac = (EditText) findViewById(R.id.editText_BT_MAC);
         mEditTextOutputData = (EditText) findViewById(R.id.editText_output_data);
@@ -104,8 +109,10 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                     mSendData = null;
                 }
                 BtManager.getInstance().writeData(command.getBytes(), transferDataCallBack);
-
                 mTextViewData.setText(text + "SEND -- " + command + "\r\n");
+                break;
+            case R.id.button_pull_file:
+                BtManager.getInstance().pullFile("c:\\autostart.txt");
                 break;
         }
     }
@@ -127,7 +134,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                     mTextViewData.setText(text + "RECV -- " + data_str + "\r\n");
                     mScrollViewData.fullScroll(ScrollView.FOCUS_DOWN);
 
-                    mTextViewDataFliter.setText(mTextViewDataFliter.getText().toString()
+                    mTextViewDataFilter.setText(mTextViewDataFilter.getText().toString()
                             + CommandUtils.parseReadData(mCommand, data));
                 }
             });
@@ -171,9 +178,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                 Toast.makeText(this, "拒绝开启 BLE", Toast.LENGTH_LONG).show();
             }
         }
-
     }
-
 
     @Override
     protected void onDestroy() {

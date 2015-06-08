@@ -27,7 +27,7 @@
                 android:id="@+id/editText_BT_MAC"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="74:F3:E7:F2:62:61"
+                android:text="28:6D:47:76:62:61"
                 android:textSize="17sp"/>
         </LinearLayout>
 
@@ -101,6 +101,14 @@
             android:layout_gravity="center_horizontal"
             android:clickable="false"
             android:text="Send"/>
+
+        <Button
+            android:id="@+id/button_pull_file"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_gravity="center_horizontal"
+            android:clickable="true"
+            android:text="PUll"/>
     </LinearLayout>
 
 </RelativeLayout>

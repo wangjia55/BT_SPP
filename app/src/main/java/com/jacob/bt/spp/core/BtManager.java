@@ -7,6 +7,7 @@ import com.jacob.bt.spp.exception.BtInitException;
 import com.jacob.bt.spp.impl.BtConnectCallBack;
 import com.jacob.bt.spp.impl.BtTransferDataCallBack;
 import com.jacob.bt.spp.impl.IBtService;
+import com.jacob.bt.spp.utils.LogUtils;
 
 /**
  * Package : com.jacob.bt.spp.core
@@ -17,9 +18,12 @@ import com.jacob.bt.spp.impl.IBtService;
 public class BtManager implements IBtService {
 
     private static BtManager sInstance;
+
     private BluetoothAdapter mBluetoothAdapter;
 
     private BtSppConnector mBtSppConnector = new BtSppConnector();
+
+    private BtFileManager mBtFileManager = new BtFileManager(mBtSppConnector);
 
     private BtManager() {
     }
@@ -96,6 +100,12 @@ public class BtManager implements IBtService {
         if (mBluetoothAdapter != null && mBluetoothAdapter.isEnabled()) {
             mBluetoothAdapter.disable();
         }
+    }
+
+    @Override
+    public void pullFile(String fileAddress) {
+        LogUtils.LOGE("pullFile",fileAddress);
+        mBtFileManager.pullFile(fileAddress);
     }
 
 

@@ -22,7 +22,7 @@ import java.util.UUID;
  * Date : 15-6-5
  * Description : 这个类是关于蓝牙SPP操作的核心类
  */
-public class BtSppConnector {
+class BtSppConnector {
     public static final String TAG = "BtSppConnector";
 
     private final String ANDROID_BT_UUID = "00001101-0000-1000-8000-00805F9B34FB";
@@ -113,6 +113,24 @@ public class BtSppConnector {
      */
     public void writeData(byte[] data, BtTransferDataCallBack btTransferDataCallBack) {
         mBtTransDataCallBack = btTransferDataCallBack;
+        if (mBtTransDataCallBack != null) {
+            mBtTransDataCallBack.sendData(data);
+        }
+        if (mTransDataThread == null) {
+            mTransDataThread = new TransferDataThread();
+            mTransDataThread.start();
+        }
+        mTransDataThread.write(data);
+    }
+
+    /**
+     * 向蓝牙设备写命令
+     */
+    public void writeData(byte[] data) {
+        if (mBtTransDataCallBack != null) {
+            mBtTransDataCallBack.sendData(data);
+        }
+
         if (mTransDataThread == null) {
             mTransDataThread = new TransferDataThread();
             mTransDataThread.start();
@@ -198,6 +216,7 @@ public class BtSppConnector {
 
                 } catch (IOException e) {
                     callbackTransDataError(e.getMessage());
+                    return;
                 }
             }
         }
