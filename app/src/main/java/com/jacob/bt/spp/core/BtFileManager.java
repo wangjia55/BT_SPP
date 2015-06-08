@@ -1,5 +1,6 @@
 package com.jacob.bt.spp.core;
 
+import com.jacob.bt.spp.impl.BtPullFileCallBack;
 import com.jacob.bt.spp.impl.BtTransferDataCallBack;
 import com.jacob.bt.spp.utils.CommandUtils;
 import com.jacob.bt.spp.utils.LogUtils;
@@ -7,8 +8,8 @@ import com.jacob.bt.spp.utils.LogUtils;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
-import java.text.SimpleDateFormat;
 
 /**
  * Package : com.jacob.bt.spp.utils
@@ -18,14 +19,16 @@ import java.text.SimpleDateFormat;
  */
 class BtFileManager {
     private String mFileName = "";
-    private boolean mResponse = false;
     private String mCommand;
     private int mFileSize;
+    private boolean mResponse = false;
 
     public static final int READ_MAX_SIZE = 38;
     public static final int WRITE_MAX_SIZE = 54;
 
     private BtSppConnector mBtSppConnector;
+
+    private BtPullFileCallBack mPullFileCallBack;
 
     public BtFileManager(BtSppConnector btSppConnector) {
         mBtSppConnector = btSppConnector;
@@ -34,11 +37,13 @@ class BtFileManager {
     /**
      * 在读取文件的过程中，需要串行给设备发送命令
      */
-    public void pullFile(String fileAddress) {
+    public void pullFile(String fileAddress, BtPullFileCallBack pullFileCallBack) {
         mFileName = fileAddress;
         if (mFileName == null || "".equals(mFileName)) {
             return;
         }
+        this.mPullFileCallBack = pullFileCallBack;
+
         new PullFileThread().start();
     }
 
@@ -54,12 +59,15 @@ class BtFileManager {
         /* */
         @Override
         public void run() {
+            pullFile();
+        }
 
+        /*读取文件*/
+        public void pullFile() {
             /*step 1: 发送一个 close file 的命令*/
             mCommand = CommandUtils.COMMAND_CLOSE_FILE_DATA;
             String fileCommand = CommandUtils.COMMAND_PREFIX + CommandUtils.COMMAND_CLOSE_FILE_DATA;
             mBtSppConnector.writeData(fileCommand.getBytes(), btPullFileCallBack);
-            LogUtils.LOGE("TAG--conmand", fileCommand);
 
             /*step 1-1: 等待回复，成功才执行第二个命令 */
             if (!waitResponse()) {
@@ -100,7 +108,7 @@ class BtFileManager {
 
             int totalRead = 0;
             int readLen = 0;
-            String prints = "";
+            String content = "";
 
               /*step 5: 通过循环读取文件内容，最后再组装成字符串*/
             while (totalRead < mFileSize) {
@@ -114,13 +122,16 @@ class BtFileManager {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                prints = prints + new String(buf);
-
+                content = content + new String(buf);
                 totalRead += readLen;
             }
 
-            prints = prints + "## END ##" + "\r\n";
-            LogUtils.LOGE("end ---->:", prints);
+            LogUtils.LOGE(" Read File end ---->:", content);
+
+            if (mPullFileCallBack != null) {
+                mPullFileCallBack.readData(content);
+            }
+
              /*step 6:关闭文件流*/
             try {
                 if (fos != null) {
@@ -186,6 +197,10 @@ class BtFileManager {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+            }
+
+            if (mPullFileCallBack != null) {
+                mPullFileCallBack.readFail("Device no Response when pull file!");
             }
             return false;
         }
@@ -255,20 +270,20 @@ class BtFileManager {
      */
     private File createStoreFilePath() {
         File file = null;
-        SimpleDateFormat sDateFormat = new SimpleDateFormat("hh:mm:ss");
-        String date = sDateFormat.format(new java.util.Date());
-
-        String file_name = mFileName + "_" + date.toString();
+        String file_name = mFileName;
         file_name = file_name.replace(":\\", "_");
         file_name = file_name.replace('\\', '_');
-
-        try {
-            file = new File("/sdcard/" + file_name);
-            if (!file.exists()) {
+        File pathFile = new File("/sdcard/btspp/");
+        if (!pathFile.exists()) {
+            pathFile.mkdirs();
+        }
+        file = new File("/sdcard/btspp/" + file_name);
+        if (!file.exists()) {
+            try {
                 file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
         return file;
     }

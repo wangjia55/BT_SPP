@@ -17,6 +17,7 @@ import android.widget.Toast;
 import com.jacob.bt.spp.core.BtManager;
 import com.jacob.bt.spp.core.ConnectState;
 import com.jacob.bt.spp.impl.BtConnectCallBack;
+import com.jacob.bt.spp.impl.BtPullFileCallBack;
 import com.jacob.bt.spp.impl.BtTransferDataCallBack;
 import com.jacob.bt.spp.utils.CommandUtils;
 import com.jacob.bt.spp.utils.LogUtils;
@@ -112,10 +113,30 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                 mTextViewData.setText(text + "SEND -- " + command + "\r\n");
                 break;
             case R.id.button_pull_file:
-                BtManager.getInstance().pullFile("c:\\autostart.txt");
+                BtManager.getInstance().pullFile("c:\\autostart.txt",pullFileCallBack);
                 break;
         }
     }
+
+    private BtPullFileCallBack pullFileCallBack = new BtPullFileCallBack() {
+        @Override
+        public void readData(final String data) {
+            LogUtils.LOGE(TAG, "readData:" + data);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mTextViewDataFilter.setText(data + "\r\n");
+                    mScrollViewData.fullScroll(ScrollView.FOCUS_DOWN);
+                }
+            });
+        }
+
+        @Override
+        public void readFail(String reason) {
+            LogUtils.LOGE(TAG, "readFail:" + reason);
+        }
+    };
+
 
     private BtTransferDataCallBack transferDataCallBack = new BtTransferDataCallBack() {
         @Override

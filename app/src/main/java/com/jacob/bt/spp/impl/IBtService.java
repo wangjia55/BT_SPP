@@ -9,6 +9,7 @@ import android.bluetooth.BluetoothDevice;
  * Description : 这个类是蓝牙对外使用的接口
  */
 public interface IBtService {
+
     void connect(String address, BtConnectCallBack btConnectCallBack) throws IllegalArgumentException;
 
     void connect(BluetoothDevice device, BtConnectCallBack btConnectCallBack);
@@ -19,5 +20,5 @@ public interface IBtService {
 
     void closeBluetooth();
 
-    void pullFile(String fileAddress);
+    void pullFile(String fileAddress,BtPullFileCallBack pullFileCallBack);
 }
